@@ -551,12 +551,12 @@ func TestDecodeMalformedNumbers(t *testing.T) {
 		s    string
 		want string
 	}{
-		{"++99", "Expected a digit"},
+		{"++99", "expected a digit"},
 		{"0..1", "must be followed by one or more digits"},
 		{"0.1.2", "Invalid float value"},
 		{"1e2.3", "Invalid float value"},
 		{"1e2e3", "Invalid float value"},
-		{"_123", "Expected value"},
+		{"_123", "expected value"},
 		{"123_", "surrounded by digits"},
 		{"1._23", "surrounded by digits"},
 		{"1e__23", "surrounded by digits"},
@@ -672,6 +672,91 @@ name = "Rice"
 		t.Fatal(err)
 	}
 
+}
+
+func TestDecodeInlineTable(t *testing.T) {
+	input := `
+[CookieJar]
+Types = {Chocolate = "yummy", Oatmeal = "best ever"}
+
+[Seasons]
+Locations = {NY = {Temp = "not cold", Rating = 4}, MI = {Temp = "freezing", Rating = 9}}
+`
+	type cookieJar struct {
+		Types map[string]string
+	}
+	type properties struct {
+		Temp   string
+		Rating int
+	}
+	type seasons struct {
+		Locations map[string]properties
+	}
+	type wrapper struct {
+		CookieJar cookieJar
+		Seasons   seasons
+	}
+	var got wrapper
+
+	meta, err := Decode(input, &got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := wrapper{
+		CookieJar: cookieJar{
+			Types: map[string]string{
+				"Chocolate": "yummy",
+				"Oatmeal":   "best ever",
+			},
+		},
+		Seasons: seasons{
+			Locations: map[string]properties{
+				"NY": {
+					Temp:   "not cold",
+					Rating: 4,
+				},
+				"MI": {
+					Temp:   "freezing",
+					Rating: 9,
+				},
+			},
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("after decode, got:\n\n%#v\n\nwant:\n\n%#v", got, want)
+	}
+	if len(meta.keys) != 12 {
+		t.Errorf("after decode, got %d meta keys; want 12", len(meta.keys))
+	}
+	if len(meta.types) != 12 {
+		t.Errorf("after decode, got %d meta types; want 12", len(meta.types))
+	}
+}
+
+func TestDecodeMalformedInlineTable(t *testing.T) {
+	for _, tt := range []struct {
+		s    string
+		want string
+	}{
+		{"{,}", "unexpected comma"},
+		{"{x = 3 y = 4}", "expected a comma or an inline table terminator"},
+		{"{x=3,,y=4}", "unexpected comma"},
+		{"{x=3,\ny=4}", "newlines not allowed"},
+		{"{x=3\n,y=4}", "newlines not allowed"},
+	} {
+		var x struct{ A map[string]int }
+		input := "a = " + tt.s
+		_, err := Decode(input, &x)
+		if err == nil {
+			t.Errorf("Decode(%q): got nil, want error containing %q",
+				input, tt.want)
+			continue
+		}
+		if !strings.Contains(err.Error(), tt.want) {
+			t.Errorf("Decode(%q): got %q, want error containing %q",
+				input, err, tt.want)
+		}
+	}
 }
 
 type menu struct {
@@ -802,6 +887,25 @@ func TestDecodePrimitive(t *testing.T) {
 		}
 		if !reflect.DeepEqual(tt.v, tt.want) {
 			t.Errorf("[%d] got %#v; want %#v", i, tt.v, tt.want)
+		}
+	}
+}
+
+func TestDecodeErrors(t *testing.T) {
+	for _, s := range []string{
+		`x="`,
+		`x='`,
+		`x='''`,
+
+		// Cases found by fuzzing in
+		// https://github.com/BurntSushi/toml/issues/155.
+		`""�`,   // used to panic with index out of range
+		`e="""`, // used to hang
+	} {
+		var x struct{}
+		_, err := Decode(s, &x)
+		if err == nil {
+			t.Errorf("Decode(%q): got nil error", s)
 		}
 	}
 }
