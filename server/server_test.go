@@ -34,6 +34,7 @@ import (
 	alertservice "github.com/influxdata/kapacitor/services/alert"
 	"github.com/influxdata/kapacitor/services/alert/alerttest"
 	"github.com/influxdata/kapacitor/services/alerta/alertatest"
+	"github.com/influxdata/kapacitor/services/alertpost"
 	"github.com/influxdata/kapacitor/services/hipchat/hipchattest"
 	"github.com/influxdata/kapacitor/services/opsgenie"
 	"github.com/influxdata/kapacitor/services/opsgenie/opsgenietest"
@@ -5488,6 +5489,80 @@ func TestServer_UpdateConfig(t *testing.T) {
 			},
 		},
 		{
+			section: "alertpost",
+			element: "test",
+			setDefaults: func(c *server.Config) {
+				apc := alertpost.Config{
+					Endpoint: "test",
+					URL:      "http://alertpost.example.com",
+				}
+				c.AlertPost = alertpost.Configs{apc}
+			},
+			expDefaultSection: client.ConfigSection{
+				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertpost"},
+				Elements: []client.ConfigElement{
+					{
+						Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertpost/test"},
+						Options: map[string]interface{}{
+							"endpoint": "test",
+							"url":      "http://alertpost.example.com",
+							"headers":  false,
+						},
+						Redacted: []string{
+							"headers",
+						}},
+				},
+			},
+			expDefaultElement: client.ConfigElement{
+				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertpost/test"},
+				Options: map[string]interface{}{
+					"endpoint": "test",
+					"url":      "http://alertpost.example.com",
+					"headers":  false,
+				},
+				Redacted: []string{
+					"headers",
+				},
+			},
+			updates: []updateAction{
+				{
+					element: "test",
+					updateAction: client.ConfigUpdateAction{
+						Set: map[string]interface{}{
+							"headers": map[string]string{
+								"Authorization": "works",
+							},
+						},
+					},
+					expSection: client.ConfigSection{
+						Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertpost"},
+						Elements: []client.ConfigElement{{
+							Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertpost/test"},
+							Options: map[string]interface{}{
+								"endpoint": "test",
+								"url":      "http://alertpost.example.com",
+								"headers":  true,
+							},
+							Redacted: []string{
+								"headers",
+							},
+						}},
+					},
+					expElement: client.ConfigElement{
+						Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertpost/test"},
+						Options: map[string]interface{}{
+							"endpoint": "test",
+							"url":      "http://alertpost.example.com",
+							"headers":  true,
+						},
+						Redacted: []string{
+							"headers",
+						},
+					},
+				},
+			},
+		},
+		{
 			section: "pushover",
 			setDefaults: func(c *server.Config) {
 				c.Pushover.URL = "http://pushover.example.com"
@@ -6554,6 +6629,11 @@ func TestServer_ListServiceTests(t *testing.T) {
 						"testServiceB",
 					},
 				},
+			},
+			{
+				Link:    client.Link{Relation: client.Self, Href: "/kapacitor/v1/service-tests/alertpost"},
+				Name:    "alertpost",
+				Options: client.ServiceTestOptions{},
 			},
 			{
 				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/service-tests/hipchat"},

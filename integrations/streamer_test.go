@@ -31,6 +31,8 @@ import (
 	"github.com/influxdata/kapacitor/services/alert/alerttest"
 	"github.com/influxdata/kapacitor/services/alerta"
 	"github.com/influxdata/kapacitor/services/alerta/alertatest"
+	"github.com/influxdata/kapacitor/services/alertpost"
+	"github.com/influxdata/kapacitor/services/alertpost/alertposttest"
 	"github.com/influxdata/kapacitor/services/hipchat"
 	"github.com/influxdata/kapacitor/services/hipchat/hipchattest"
 	k8s "github.com/influxdata/kapacitor/services/k8s/client"
@@ -7114,7 +7116,6 @@ stream
 		t.Error(err)
 	}
 }
-
 func TestStream_AlertOpsGenie(t *testing.T) {
 	ts := opsgenietest.NewServer()
 	defer ts.Close()
@@ -7276,7 +7277,7 @@ stream
 }
 
 func TestStream_AlertPost(t *testing.T) {
-	ts := alerttest.NewPostServer()
+	ts := alertposttest.NewServer(nil)
 	defer ts.Close()
 
 	var script = `
@@ -7301,21 +7302,94 @@ stream
 	testStreamerNoOutput(t, "TestStream_Alert", script, 13*time.Second, nil)
 
 	exp := []interface{}{
-		alertservice.AlertData{
-			ID:      "kapacitor.cpu.serverA",
-			Message: "kapacitor.cpu.serverA is CRITICAL",
-			Time:    time.Date(1971, 1, 1, 0, 0, 10, 0, time.UTC),
-			Level:   alert.Critical,
-			Data: models.Result{
-				Series: models.Rows{
-					{
-						Name:    "cpu",
-						Tags:    map[string]string{"host": "serverA"},
-						Columns: []string{"time", "count"},
-						Values: [][]interface{}{[]interface{}{
-							time.Date(1971, 1, 1, 0, 0, 10, 0, time.UTC),
-							10.0,
-						}},
+		alertposttest.Request{
+			MatchingHeaders: true,
+			Data: alertpost.AlertData{
+				ID:      "kapacitor.cpu.serverA",
+				Message: "kapacitor.cpu.serverA is CRITICAL",
+				Time:    time.Date(1971, 1, 1, 0, 0, 10, 0, time.UTC),
+				Level:   alert.Critical,
+				Data: models.Result{
+					Series: models.Rows{
+						{
+							Name:    "cpu",
+							Tags:    map[string]string{"host": "serverA"},
+							Columns: []string{"time", "count"},
+							Values: [][]interface{}{[]interface{}{
+								time.Date(1971, 1, 1, 0, 0, 10, 0, time.UTC),
+								10.0,
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ts.Close()
+	var got []interface{}
+	for _, g := range ts.Data() {
+		got = append(got, g)
+	}
+
+	if err := compareListIgnoreOrder(got, exp, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestStream_AlertPostEndpoint(t *testing.T) {
+	headers := map[string]string{"Authorization": "works"}
+	ts := alertposttest.NewServer(headers)
+	defer ts.Close()
+
+	var script = `
+stream
+	|from()
+		.measurement('cpu')
+		.where(lambda: "host" == 'serverA')
+		.groupBy('host')
+	|window()
+		.period(10s)
+		.every(10s)
+	|count('value')
+	|alert()
+		.id('kapacitor.{{ .Name }}.{{ index .Tags "host" }}')
+		.info(lambda: "count" > 6.0)
+		.warn(lambda: "count" > 7.0)
+		.crit(lambda: "count" > 8.0)
+		.details('')
+		.post()
+		 .endpoint('test')
+`
+	tmInit := func(tm *kapacitor.TaskMaster) {
+		c := alertpost.Config{}
+		c.URL = ts.URL
+		c.Endpoint = "test"
+		c.Headers = headers
+		sl := alertpost.NewService(alertpost.Configs{c}, logService.NewLogger("[test_pushover] ", log.LstdFlags))
+		tm.AlertPostService = sl
+	}
+	testStreamerNoOutput(t, "TestStream_Alert", script, 13*time.Second, tmInit)
+
+	exp := []interface{}{
+		alertposttest.Request{
+			MatchingHeaders: true,
+			Data: alertpost.AlertData{
+				ID:      "kapacitor.cpu.serverA",
+				Message: "kapacitor.cpu.serverA is CRITICAL",
+				Time:    time.Date(1971, 1, 1, 0, 0, 10, 0, time.UTC),
+				Level:   alert.Critical,
+				Data: models.Result{
+					Series: models.Rows{
+						{
+							Name:    "cpu",
+							Tags:    map[string]string{"host": "serverA"},
+							Columns: []string{"time", "count"},
+							Values: [][]interface{}{[]interface{}{
+								time.Date(1971, 1, 1, 0, 0, 10, 0, time.UTC),
+								10.0,
+							}},
+						},
 					},
 				},
 			},
@@ -9523,6 +9597,7 @@ func testStreamer(
 	tm.HTTPDService = httpdService
 	tm.TaskStore = taskStore{}
 	tm.DeadmanService = deadman{}
+	tm.AlertPostService = alertpost.NewService(nil, logService.NewLogger("[alertpost] ", log.LstdFlags))
 	as := alertservice.NewService(alertservice.NewConfig(), logService.NewLogger("[alert] ", log.LstdFlags))
 	as.StorageService = storagetest.New()
 	as.HTTPDService = httpdService

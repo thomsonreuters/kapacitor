@@ -14,6 +14,7 @@ import (
 	"github.com/influxdata/kapacitor/command"
 	"github.com/influxdata/kapacitor/services/alert"
 	"github.com/influxdata/kapacitor/services/alerta"
+	"github.com/influxdata/kapacitor/services/alertpost"
 	"github.com/influxdata/kapacitor/services/config"
 	"github.com/influxdata/kapacitor/services/deadman"
 	"github.com/influxdata/kapacitor/services/hipchat"
@@ -62,18 +63,19 @@ type Config struct {
 	UDPs      []udp.Config      `toml:"udp"`
 
 	// Alert handlers
-	Alerta    alerta.Config    `toml:"alerta" override:"alerta"`
-	HipChat   hipchat.Config   `toml:"hipchat" override:"hipchat"`
-	OpsGenie  opsgenie.Config  `toml:"opsgenie" override:"opsgenie"`
-	PagerDuty pagerduty.Config `toml:"pagerduty" override:"pagerduty"`
-	Pushover  pushover.Config  `toml:"pushover" override:"pushover"`
-	SMTP      smtp.Config      `toml:"smtp" override:"smtp"`
-	SNMPTrap  snmptrap.Config  `toml:"snmptrap" override:"snmptrap"`
-	Sensu     sensu.Config     `toml:"sensu" override:"sensu"`
-	Slack     slack.Config     `toml:"slack" override:"slack"`
-	Talk      talk.Config      `toml:"talk" override:"talk"`
-	Telegram  telegram.Config  `toml:"telegram" override:"telegram"`
-	VictorOps victorops.Config `toml:"victorops" override:"victorops"`
+	Alerta    alerta.Config     `toml:"alerta" override:"alerta"`
+	HipChat   hipchat.Config    `toml:"hipchat" override:"hipchat"`
+	OpsGenie  opsgenie.Config   `toml:"opsgenie" override:"opsgenie"`
+	PagerDuty pagerduty.Config  `toml:"pagerduty" override:"pagerduty"`
+	Pushover  pushover.Config   `toml:"pushover" override:"pushover"`
+	AlertPost alertpost.Configs `toml:"alertpost" override:"alertpost,element-key=endpoint"`
+	SMTP      smtp.Config       `toml:"smtp" override:"smtp"`
+	SNMPTrap  snmptrap.Config   `toml:"snmptrap" override:"snmptrap"`
+	Sensu     sensu.Config      `toml:"sensu" override:"sensu"`
+	Slack     slack.Config      `toml:"slack" override:"slack"`
+	Talk      talk.Config       `toml:"talk" override:"talk"`
+	Telegram  telegram.Config   `toml:"telegram" override:"telegram"`
+	VictorOps victorops.Config  `toml:"victorops" override:"victorops"`
 
 	// Third-party integrations
 	Kubernetes k8s.Config `toml:"kubernetes" override:"kubernetes"`
@@ -116,6 +118,7 @@ func NewConfig() *Config {
 	c.OpsGenie = opsgenie.NewConfig()
 	c.PagerDuty = pagerduty.NewConfig()
 	c.Pushover = pushover.NewConfig()
+	c.AlertPost = alertpost.Configs{}
 	c.SMTP = smtp.NewConfig()
 	c.Sensu = sensu.NewConfig()
 	c.Slack = slack.NewConfig()
@@ -226,6 +229,9 @@ func (c *Config) Validate() error {
 		return err
 	}
 	if err := c.Pushover.Validate(); err != nil {
+		return err
+	}
+	if err := c.AlertPost.Validate(); err != nil {
 		return err
 	}
 	if err := c.SMTP.Validate(); err != nil {

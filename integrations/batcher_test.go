@@ -18,6 +18,7 @@ import (
 	"github.com/influxdata/kapacitor/clock"
 	"github.com/influxdata/kapacitor/models"
 	alertservice "github.com/influxdata/kapacitor/services/alert"
+	"github.com/influxdata/kapacitor/services/alertpost"
 	"github.com/influxdata/kapacitor/services/storage/storagetest"
 	"github.com/influxdata/wlog"
 )
@@ -2511,6 +2512,7 @@ func testBatcher(t *testing.T, name, script string) (clock.Setter, *kapacitor.Ex
 	tm.HTTPDService = httpdService
 	tm.TaskStore = taskStore{}
 	tm.DeadmanService = deadman{}
+	tm.AlertPostService = alertpost.NewService(nil, logService.NewLogger("[alertpost] ", log.LstdFlags))
 	as := alertservice.NewService(alertservice.NewConfig(), logService.NewLogger("[alert] ", log.LstdFlags))
 	as.StorageService = storagetest.New()
 	as.HTTPDService = httpdService

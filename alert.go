@@ -16,6 +16,7 @@ import (
 	"github.com/influxdata/kapacitor/models"
 	"github.com/influxdata/kapacitor/pipeline"
 	alertservice "github.com/influxdata/kapacitor/services/alert"
+	"github.com/influxdata/kapacitor/services/alertpost"
 	"github.com/influxdata/kapacitor/services/hipchat"
 	"github.com/influxdata/kapacitor/services/opsgenie"
 	"github.com/influxdata/kapacitor/services/pagerduty"
@@ -126,15 +127,6 @@ func newAlertNode(et *ExecutingTask, n *pipeline.AlertNode, l *log.Logger) (an *
 	}).Parse(n.Details)
 	if err != nil {
 		return nil, err
-	}
-
-	// Construct alert handlers
-	for _, post := range n.PostHandlers {
-		c := alertservice.PostHandlerConfig{
-			URL: post.URL,
-		}
-		h := alertservice.NewPostHandler(c, l)
-		an.handlers = append(an.handlers, h)
 	}
 
 	for _, tcp := range n.TcpHandlers {
@@ -352,6 +344,14 @@ func newAlertNode(et *ExecutingTask, n *pipeline.AlertNode, l *log.Logger) (an *
 			c.Sound = p.Sound
 		}
 		h := et.tm.PushoverService.Handler(c, l)
+		an.handlers = append(an.handlers, h)
+	}
+
+	for _, p := range n.AlertPostHandlers {
+		c := alertpost.HandlerConfig{}
+		c.URL = p.URL
+		c.Endpoint = p.Endpoint
+		h := et.tm.AlertPostService.Handler(c, l)
 		an.handlers = append(an.handlers, h)
 	}
 

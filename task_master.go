@@ -15,6 +15,7 @@ import (
 	"github.com/influxdata/kapacitor/models"
 	"github.com/influxdata/kapacitor/pipeline"
 	"github.com/influxdata/kapacitor/services/alerta"
+	"github.com/influxdata/kapacitor/services/alertpost"
 	"github.com/influxdata/kapacitor/services/hipchat"
 	"github.com/influxdata/kapacitor/services/httpd"
 	k8s "github.com/influxdata/kapacitor/services/k8s/client"
@@ -104,6 +105,9 @@ type TaskMaster struct {
 	}
 	PushoverService interface {
 		Handler(pushover.HandlerConfig, *log.Logger) alert.Handler
+	}
+	AlertPostService interface {
+		Handler(alertpost.HandlerConfig, *log.Logger) alert.Handler
 	}
 	SlackService interface {
 		Global() bool

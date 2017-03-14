@@ -292,7 +292,7 @@ type AlertNode struct {
 
 	// Post the JSON alert data to the specified URL.
 	// tick:ignore
-	PostHandlers []*PostHandler `tick:"Post"`
+	AlertPostHandlers []*AlertPostHandler `tick:"Post"`
 
 	// Send the JSON alert data to the specified endpoint via TCP.
 	// tick:ignore
@@ -468,23 +468,48 @@ func (a *AlertNode) Flapping(low, high float64) *AlertNode {
 }
 
 // HTTP POST JSON alert data to a specified URL.
+// Example with endpoint:
+//    stream
+//         |alert()
+//             .post()
+//              .endpoint('example')
+//
+// Example with url:
+//    stream
+//         |alert()
+//             .post('http://example.com')
+//
+// Example with endpoint and url (url takes precedence):
+//    stream
+//         |alert()
+//             .post('http://other.com')
+//              .endpoint('example')
+//
 // tick:property
-func (a *AlertNode) Post(url string) *PostHandler {
-	post := &PostHandler{
+func (a *AlertNode) Post(urls ...string) *AlertPostHandler {
+	post := &AlertPostHandler{
 		AlertNode: a,
-		URL:       url,
 	}
-	a.PostHandlers = append(a.PostHandlers, post)
+	a.AlertPostHandlers = append(a.AlertPostHandlers, post)
+
+	if len(urls) == 0 {
+		return post
+	}
+
+	post.URL = urls[0]
 	return post
 }
 
 // tick:embedded:AlertNode.Post
-type PostHandler struct {
+type AlertPostHandler struct {
 	*AlertNode
 
 	// The POST URL.
 	// tick:ignore
 	URL string
+
+	// Name of the endpoint to be used, as is defined in the configuration file
+	Endpoint string
 }
 
 // Send JSON alert data to a specified address over TCP.
