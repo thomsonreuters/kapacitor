@@ -38,9 +38,15 @@ func (n *EvalBoolNode) EvalRegex(scope *Scope, executionState ExecutionState) (*
 func (n *EvalBoolNode) EvalTime(scope *Scope, executionState ExecutionState) (time.Time, error) {
 	return time.Time{}, ErrTypeGuardFailed{RequestedType: ast.TTime, ActualType: ast.TBool}
 }
+
 func (n *EvalBoolNode) EvalDuration(scope *Scope, executionState ExecutionState) (time.Duration, error) {
 	return 0, ErrTypeGuardFailed{RequestedType: ast.TDuration, ActualType: ast.TBool}
 }
+
+func (n *EvalBoolNode) EvalMissing(scope *Scope, executionState ExecutionState) (*ast.Missing, error) {
+	return nil, ErrTypeGuardFailed{RequestedType: ast.TMissing, ActualType: ast.TBool}
+}
+
 func (n *EvalBoolNode) IsDynamic() bool {
 	return false
 }

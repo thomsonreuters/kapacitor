@@ -57,6 +57,10 @@ func (n *EvalUnaryNode) EvalTime(scope *Scope, executionState ExecutionState) (t
 	return time.Time{}, ErrTypeGuardFailed{RequestedType: ast.TTime, ActualType: n.constReturnType}
 }
 
+func (n *EvalUnaryNode) EvalMissing(scope *Scope, executionState ExecutionState) (*ast.Missing, error) {
+	return nil, ErrTypeGuardFailed{RequestedType: ast.TMissing, ActualType: n.constReturnType}
+}
+
 func (n *EvalUnaryNode) EvalDuration(scope *Scope, executionState ExecutionState) (time.Duration, error) {
 	typ, err := n.Type(scope, executionState)
 	if err != nil {

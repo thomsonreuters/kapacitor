@@ -154,6 +154,10 @@ func (n *EvalBinaryNode) EvalTime(scope *Scope, executionState ExecutionState) (
 	return time.Time{}, ErrTypeGuardFailed{RequestedType: ast.TTime, ActualType: n.constReturnType}
 }
 
+func (n *EvalBinaryNode) EvalMissing(scope *Scope, executionState ExecutionState) (*ast.Missing, error) {
+	return nil, ErrTypeGuardFailed{RequestedType: ast.TMissing, ActualType: n.constReturnType}
+}
+
 func (e *EvalBinaryNode) EvalDuration(scope *Scope, executionState ExecutionState) (time.Duration, error) {
 	result, err := e.eval(scope, executionState)
 	if err != nil {

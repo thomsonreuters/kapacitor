@@ -120,3 +120,15 @@ func (n *EvalLambdaNode) EvalBool(scope *Scope, _ ExecutionState) (bool, error) 
 
 	return false, ErrTypeGuardFailed{RequestedType: ast.TBool, ActualType: typ}
 }
+
+func (n *EvalLambdaNode) EvalMissing(scope *Scope, _ ExecutionState) (*ast.Missing, error) {
+	typ, err := n.Type(scope, n.state)
+	if err != nil {
+		return nil, err
+	}
+	if typ == ast.TMissing {
+		return n.nodeEvaluator.EvalMissing(scope, n.state)
+	}
+
+	return nil, ErrTypeGuardFailed{RequestedType: ast.TBool, ActualType: typ}
+}

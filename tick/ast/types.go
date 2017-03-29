@@ -21,7 +21,10 @@ const (
 	TLambda
 	TList
 	TStar
+	TMissing
 )
+
+type Missing struct{}
 
 func (v ValueType) String() string {
 	switch v {
@@ -45,6 +48,8 @@ func (v ValueType) String() string {
 		return "list"
 	case TStar:
 		return "star"
+	case TMissing:
+		return "missing"
 	}
 
 	return "invalid type"
@@ -72,6 +77,8 @@ func TypeOf(v interface{}) ValueType {
 		return TList
 	case *StarNode:
 		return TStar
+	case *Missing:
+		return TMissing
 	default:
 		return InvalidType
 	}
@@ -99,6 +106,8 @@ func ZeroValue(t ValueType) interface{} {
 		return []interface{}(nil)
 	case TStar:
 		return (*StarNode)(nil)
+	case TMissing:
+		return (*Missing)(nil)
 	default:
 		return errors.New("invalid type")
 	}

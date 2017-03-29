@@ -141,6 +141,10 @@ func init() {
 	initializeRegexReplaceFuncSignature()
 	statelessFuncs["regexReplace"] = regexReplace{}
 
+	// Missing functions
+	initializeIsPresentFuncSignature()
+	statelessFuncs["isPresent"] = isPresent{}
+
 	// Time functions
 	initializeTimeFuncSignature()
 	statelessFuncs["minute"] = minute{}
@@ -1324,4 +1328,42 @@ func initializeIfFuncSignature() {
 
 func (ifFunc) Signature() map[Domain]ast.ValueType {
 	return ifFuncSignature
+}
+
+type isPresent struct {
+}
+
+func (isPresent) Reset() {
+
+}
+
+func (isPresent) Call(args ...interface{}) (v interface{}, err error) {
+	if len(args) != 1 {
+		return false, errors.New("isMissing expects exactly one argument")
+	}
+	if _, isMissing := args[0].(*ast.Missing); !isMissing {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+var isPresentFuncSignature = map[Domain]ast.ValueType{}
+
+func initializeIsPresentFuncSignature() {
+	d := Domain{}
+	d[0] = ast.TMissing
+	isPresentFuncSignature[d] = ast.TBool
+	d[0] = ast.TBool
+	isPresentFuncSignature[d] = ast.TBool
+	d[0] = ast.TString
+	isPresentFuncSignature[d] = ast.TBool
+	d[0] = ast.TInt
+	isPresentFuncSignature[d] = ast.TBool
+	d[0] = ast.TFloat
+	isPresentFuncSignature[d] = ast.TBool
+}
+
+func (isPresent) Signature() map[Domain]ast.ValueType {
+	return isPresentFuncSignature
 }

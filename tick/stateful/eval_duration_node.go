@@ -30,9 +30,11 @@ func (n *EvalDurationNode) EvalString(scope *Scope, executionState ExecutionStat
 func (n *EvalDurationNode) EvalBool(scope *Scope, executionState ExecutionState) (bool, error) {
 	return false, ErrTypeGuardFailed{RequestedType: ast.TBool, ActualType: ast.TDuration}
 }
+
 func (n *EvalDurationNode) EvalRegex(scope *Scope, executionState ExecutionState) (*regexp.Regexp, error) {
 	return nil, ErrTypeGuardFailed{RequestedType: ast.TRegex, ActualType: ast.TDuration}
 }
+
 func (n *EvalDurationNode) EvalTime(scope *Scope, executionState ExecutionState) (time.Time, error) {
 	return time.Time{}, ErrTypeGuardFailed{RequestedType: ast.TTime, ActualType: ast.TDuration}
 }
@@ -40,6 +42,11 @@ func (n *EvalDurationNode) EvalTime(scope *Scope, executionState ExecutionState)
 func (n *EvalDurationNode) EvalDuration(scope *Scope, executionState ExecutionState) (time.Duration, error) {
 	return n.Duration, nil
 }
+
+func (n *EvalDurationNode) EvalMissing(scope *Scope, executionState ExecutionState) (*ast.Missing, error) {
+	return nil, ErrTypeGuardFailed{RequestedType: ast.TMissing, ActualType: ast.TDuration}
+}
+
 func (n *EvalDurationNode) IsDynamic() bool {
 	return false
 }

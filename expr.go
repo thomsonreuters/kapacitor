@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/influxdata/kapacitor/models"
+	"github.com/influxdata/kapacitor/tick/ast"
 	"github.com/influxdata/kapacitor/tick/stateful"
 )
 
@@ -50,7 +51,9 @@ func fillScope(vars *stateful.Scope, referenceVariables []string, now time.Time,
 		}
 		if !isFieldExists && !isTagExists {
 			if !vars.Has(refVariableName) {
-				return fmt.Errorf("no field or tag exists for %s", refVariableName)
+				var missingValue interface{} = &ast.Missing{}
+				vars.Set(refVariableName, missingValue)
+				//return fmt.Errorf("no field or tag exists for %s", refVariableName)
 			}
 		}
 	}
