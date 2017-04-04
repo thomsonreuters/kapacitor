@@ -949,6 +949,7 @@ func (a *AlertaHandler) Services(service ...string) *AlertaHandler {
 //      enabled = true
 //      url = "http://sensu:3030"
 //      source = "Kapacitor"
+//      handlers = "sns"
 //
 // Example:
 //    stream

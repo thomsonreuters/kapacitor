@@ -11,6 +11,7 @@ type Config struct {
 	Addr string `toml:"addr" override:"addr"`
 	// The JIT sensu source name of the alert.
 	Source string `toml:"source" override:"source"`
+	Handlers string `toml:"handlers"`
 }
 
 func NewConfig() Config {

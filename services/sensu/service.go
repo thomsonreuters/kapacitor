@@ -136,6 +136,7 @@ func (s *Service) prepareData(name, output string, level alert.Level) (*net.TCPA
 	postData["source"] = c.Source
 	postData["output"] = output
 	postData["status"] = status
+	postData["handlers"] = c.Handlers
 
 	addr, err := net.ResolveTCPAddr("tcp", c.Addr)
 	if err != nil {
