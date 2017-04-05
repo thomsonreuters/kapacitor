@@ -10,8 +10,9 @@ type Config struct {
 	// The Sensu client host:port address.
 	Addr string `toml:"addr" override:"addr"`
 	// The JIT sensu source name of the alert.
-	Source   string `toml:"source" override:"source"`
-	Handlers string `toml:"handlers"`
+	Source string `toml:"source" override:"source"`
+	// The sensu handler to use
+	Handlers []string `toml:"handlers"`
 }
 
 func NewConfig() Config {
