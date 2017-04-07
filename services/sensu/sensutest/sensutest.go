@@ -68,4 +68,5 @@ type Request struct {
 	Source string `json:"source"`
 	Output string `json:"output"`
 	Status int    `json:"status"`
+	Handlers[] string `json:"handlers"`
 }

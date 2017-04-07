@@ -6643,6 +6643,7 @@ stream
 		c.Enabled = true
 		c.Addr = ts.Addr
 		c.Source = "Kapacitor"
+		c.Handlers = []string{"sns"}
 		sl := sensu.NewService(c, logService.NewLogger("[test_sensu] ", log.LstdFlags))
 		tm.SensuService = sl
 	}
@@ -6654,6 +6655,7 @@ stream
 			Output: "kapacitor.cpu.serverA is CRITICAL",
 			Name:   "kapacitor.cpu.serverA",
 			Status: 2,
+			Handlers: []string{"sns"},
 		},
 	}
 

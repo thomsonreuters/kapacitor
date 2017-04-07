@@ -132,6 +132,13 @@ func (s *Service) prepareData(name, output string, level alert.Level) (*net.TCPA
 	}
 
 	postData := make(map[string]interface{})
+	fmt.Printf(">>>>>>>>>>>>>>\n")
+	fmt.Printf(c.Source)
+	fmt.Printf("\n>>>>>>>>>>>>>>\n")
+	fmt.Printf(c.Addr)
+	fmt.Printf("\n>>>>>>>>>>>>>>\n")
+	fmt.Printf(c.Handlers[0])
+	fmt.Print("\n")
 	postData["name"] = name
 	postData["source"] = c.Source
 	postData["output"] = output
